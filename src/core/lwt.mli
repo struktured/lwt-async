@@ -1,9 +1,9 @@
 (* Lightweight thread library for OCaml
  * http://www.ocsigen.org/lwt
  * Interface Lwt
- * Copyright (C) 2005-2008 Jérôme Vouillon
- * Laboratoire PPS - CNRS Université Paris Diderot
- *               2009-2012 Jérémie Dimino
+ * Copyright (C) 2005-2008 Jï¿½rï¿½me Vouillon
+ * Laboratoire PPS - CNRS Universitï¿½ Paris Diderot
+ *               2009-2012 Jï¿½rï¿½mie Dimino
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -30,9 +30,9 @@
     waiting for some event to happen.
 
     Lwt threads are cooperative in the sense that switching to another
-    thread is awlays explicit (with {!wakeup} or {!wekup_exn}). When a
+    thread is awlays explicit (with {!wakeup} or {!wakeup_exn}). When a
     thread is running, it executes as much as possible, and then
-    returns (a value or an eror) or sleeps.
+    returns (a value or an error) or sleeps.
 
     Note that inside a Lwt thread, exceptions must be raised with
     {!fail} instead of [raise]. Also the [try ... with ...]
@@ -44,7 +44,7 @@
     using Lwt more readable.
 *)
 
-(** {6 Definitions and basics} *)
+(** {2 Definitions and basics} *)
 
 type +'a t = ('a, exn) Core.Std.Result.t Async.Std.Deferred.t
   (** The type of threads returning a result of type ['a]. *)
@@ -70,7 +70,7 @@ val bind : 'a t -> ('a -> 'b t) -> 'b t
       Note that [bind] is also often used just for synchronization
       purpose: [t'] will not execute before [t] is terminated.
 
-      The result of a thread can be bound several time. *)
+      The result of a thread can be bound several times. *)
 
 val (>>=) : 'a t -> ('a -> 'b t) -> 'b t
   (** [t >>= f] is an alternative notation for [bind t f]. *)
@@ -79,7 +79,7 @@ val (=<<) : ('a -> 'b t) -> 'a t -> 'b t
   (** [f =<< t] is [t >>= f] *)
 
 val map : ('a -> 'b) -> 'a t -> 'b t
-  (** [map f m] map the result of a thread. This is the same as [bind
+  (** [map f m] maps the result of a thread. This is the same as [bind
       m (fun x -> return (f x))] *)
 
 val (>|=) : 'a t -> ('a -> 'b) -> 'b t
@@ -88,7 +88,7 @@ val (>|=) : 'a t -> ('a -> 'b) -> 'b t
 val (=|<) : ('a -> 'b) -> 'a t -> 'b t
   (** [f =|< m] is [map f m] *)
 
-(** {8 Pre-allocated threads} *)
+(** {3 Pre-allocated threads} *)
 
 val return_unit : unit t
   (** [return_unit = return ()] *)
@@ -105,11 +105,11 @@ val return_true : bool t
 val return_false : bool t
   (** [return_false = return false] *)
 
-(** {6 Thread storage} *)
+(** {2 Thread storage} *)
 
 type 'a key
   (** Type of a key. Keys are used to store local values into
-      threads *)
+      threads. *)
 
 val new_key : unit -> 'a key
   (** [new_key ()] creates a new key. *)
@@ -120,10 +120,9 @@ val get : 'a key -> 'a option
 
 val with_value : 'a key -> 'a option -> (unit -> 'b) -> 'b
   (** [with_value key value f] executes [f] with [value] associated to
-      [key]. The previous value associated to [key] is restored after
-      [f] terminates. *)
+      [key]. [key] is restored to its previous value after [f] terminates. *)
 
-(** {6 Exceptions handling} *)
+(** {2 Exceptions handling} *)
 
 val catch : (unit -> 'a t) -> (exn -> 'a t) -> 'a t
   (** [catch t f] is a thread that behaves as the thread [t ()] if
@@ -141,8 +140,9 @@ val finalize : (unit -> 'a t) -> (unit -> unit t) -> 'a t
       fails or not. In both cases, [g ()] is executed after [f]. *)
 
 val wrap : (unit -> 'a) -> 'a t
-  (** [wrap f] calls [f] and transform the result into a monad. If [f]
-      raise an exception, it is catched by Lwt.
+  (** [wrap f] calls [f] and transforms the result into an Lwt thread.
+      If [f] raises an exception, it is caught and converted to an Lwt
+      exception.
 
       This is actually the same as:
 
@@ -162,13 +162,13 @@ val wrap1 : ('a -> 'b) -> 'a -> 'b t
       Note that you must use {!wrap} instead of {!wrap1} if the
       evaluation of [x] may raise an exception.
 
-      for example the following code is not ok:
+      For example, the following code is incorrect:
 
       {[
         wrap1 f (Hashtbl.find table key)
       ]}
 
-      you should write instead:
+      and should be written as:
 
       {[
         wrap (fun () -> f (Hashtbl.find table key))
@@ -182,11 +182,11 @@ val wrap5 : ('a -> 'b -> 'c -> 'd -> 'e -> 'f) -> 'a -> 'b -> 'c -> 'd -> 'e -> 
 val wrap6 : ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g t
 val wrap7 : ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h t
 
-(** {6 Multi-threads composition} *)
+(** {2 Multi-threads composition} *)
 
 val choose : 'a t list -> 'a t
   (** [choose l] behaves as the first thread in [l] to terminate.  If
-      several threads are already terminated, one is choosen at
+      several threads are already terminated, one is chosen at
       random.
 
       Note: {!choose} leaves the local values of the current thread
@@ -244,7 +244,7 @@ val async_exception_hook : (exn -> unit) ref
       The behavior is undefined if this function raise an
       exception. *)
 
-(** {6 Sleeping and resuming} *)
+(** {2 Sleeping and resuming} *)
 
 type 'a u
   (** The type of thread wakeners. *)
@@ -295,7 +295,7 @@ val wakeup_later_result : 'a u -> 'a result -> unit
   (** Same as {!wakeup_result} but it is not guaranteed that the
       thread will be woken up immediately. *)
 
-(** {6 Threads state} *)
+(** {2 Threads state} *)
 
 (** State of a thread *)
 type 'a state =
@@ -312,7 +312,7 @@ val state : 'a t -> 'a state
 val is_sleeping : 'a t -> bool
   (** [is_sleeping t] returns [true] iff [t] is sleeping. *)
 
-(** {6 Cancelable threads} *)
+(** {2 Cancelable threads} *)
 
 (** Cancelable threads are the same as regular threads except that
     they can be canceled. *)
@@ -379,7 +379,7 @@ val no_cancel : 'a t -> 'a t
   (** [no_cancel thread] creates a thread which behave as [thread]
       except that it cannot be canceled. *)
 
-(** {6 Pause} *)
+(** {2 Pause} *)
 
 val pause : unit -> unit t
   (** [pause ()] is a sleeping thread which is wake up on the next
@@ -407,7 +407,7 @@ val register_pause_notifier : (int -> unit) -> unit
       the new number of threads paused. It is usefull to be able to
       call {!wakeup_paused} when there is no scheduler *)
 
-(** {6 Misc} *)
+(** {2 Misc} *)
 
 val on_success : 'a t -> ('a -> unit) -> unit
   (** [on_success t f] executes [f] when [t] terminates without
