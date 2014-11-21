@@ -37,7 +37,7 @@ type 'a t
 type 'a node
   (** Type of a node holding one value of type ['a] in a sequence *)
 
-(** {6 Operation on nodes} *)
+(** {2 Operation on nodes} *)
 
 val get : 'a node -> 'a
   (** Returns the contents of a node *)
@@ -49,7 +49,7 @@ val remove : 'a node -> unit
   (** Removes a node from the sequence it is part of. It does nothing
       if the node has already been removed. *)
 
-(** {6 Operations on sequence} *)
+(** {2 Operations on sequence} *)
 
 val create : unit -> 'a t
   (** [create ()] creates a new empty sequence *)
@@ -100,7 +100,7 @@ val transfer_r : 'a t -> 'a t -> unit
       the right of [s2]. This operation runs in constant time and
       space. *)
 
-(** {6 Sequence iterators} *)
+(** {2 Sequence iterators} *)
 
 (** Note: it is OK to remove a node while traversing a sequence *)
 
@@ -135,3 +135,21 @@ val fold_r : ('a -> 'b -> 'b) -> 'a t -> 'b -> 'b
       ]}
       where [e1], [e2], ..., [en] are the elements of [s]
   *)
+
+val find_node_opt_l : ('a -> bool) -> 'a t -> 'a node option
+  (** [find_node_opt_l f s] returns [Some x], where [x] is the first node of
+      [s] starting from the left that satisfies [f] or [None] if none
+      exists. *)
+
+val find_node_opt_r : ('a -> bool) -> 'a t -> 'a node option
+  (** [find_node_opt_r f s] returns [Some x], where [x] is the first node of
+      [s] starting from the right that satisfies [f] or [None] if none
+      exists. *)
+
+val find_node_l : ('a -> bool) -> 'a t -> 'a node
+  (** [find_node_l f s] returns the first node of [s] starting from the left
+      that satisfies [f] or raises [Not_found] if none exists. *)
+
+val find_node_r : ('a -> bool) -> 'a t -> 'a node
+  (** [find_node_r f s] returns the first node of [s] starting from the right
+      that satisfies [f] or raises [Not_found] if none exists. *)
