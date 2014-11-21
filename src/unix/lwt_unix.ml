@@ -231,7 +231,7 @@ let state fd =
   match Deferred.peek (Ivar.read fd.aborted) with
   | None ->
     begin match Raw_fd.state (raw_fd_of_fd fd.fd) with
-    | Raw_fd.State.Open -> Opened
+			| Raw_fd.State.Open _ -> Opened
     | _ -> Closed
     end
   | Some exn -> Aborted exn

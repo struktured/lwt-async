@@ -28,9 +28,9 @@
 open Core.Std
 open Async.Std
 
-module Ivar = Async_core.Raw_ivar
-module Handler = Async_core.Raw_handler
-module Scheduler = Async_core.Raw_scheduler
+module Ivar = Async_kernel.Raw_ivar
+module Handler = Async_kernel.Raw_handler
+module Scheduler = Async_kernel.Raw_scheduler
 
 type +'a t = ('a, exn) Result.t Deferred.t
 type -'a u
