@@ -33,7 +33,7 @@ let in_channel_of_descr fd = of_fd ~mode:Lwt_io.input fd
 let make_in_channel ?close read =
   make ~mode:Lwt_io.input ?close
     (fun buf ofs len ->
-       let str = String.create len in
+       let str = Bytes.create len in
        lwt n = read str 0 len in
        if (n > 0) then Lwt_bytes.blit_string_bytes str 0 buf ofs len;
        return n)
@@ -70,7 +70,7 @@ let out_channel_of_descr fd = of_fd ~mode:Lwt_io.output fd
 let make_out_channel ?close write =
   make ~mode:Lwt_io.output ?close
     (fun buf ofs len ->
-       let str = String.create len in
+       let str = Bytes.create len in
        Lwt_bytes.blit_bytes_string buf ofs str 0 len;
        write str 0 len)
 

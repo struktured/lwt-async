@@ -825,7 +825,7 @@ struct
     end
 
   let rev_concat len l =
-    let buf = String.create len in
+    let buf = Bytes.create len in
     let _ =
       List.fold_left
         (fun ofs str ->
@@ -839,7 +839,7 @@ struct
 
   let rec read_all ic total_len acc =
     let len = ic.max - ic.ptr in
-    let str = String.create len in
+    let str = Bytes.create len in
     Lwt_bytes.unsafe_blit_bytes_string ic.buffer ic.ptr str 0 len;
     ic.ptr <- ic.max;
     refill ic >>= function
@@ -853,7 +853,7 @@ struct
       | None ->
           read_all ic 0 []
       | Some len ->
-          let str = String.create len in
+          let str = Bytes.create len in
           lwt real_len = unsafe_read_into ic str 0 len in
           if real_len < len then
             return (String.sub str 0 real_len)
@@ -861,10 +861,10 @@ struct
             return str
 
   let read_value ic =
-    let header = String.create 20 in
+    let header = Bytes.create 20 in
     lwt () = unsafe_read_into_exactly ic header 0 20 in
     let bsize = Marshal.data_size header 0 in
-    let buffer = String.create (20 + bsize) in
+    let buffer = Bytes.create (20 + bsize) in
     String.unsafe_blit header 0 buffer 0 20;
     lwt () = unsafe_read_into_exactly ic buffer 20 bsize in
     return (Marshal.from_string buffer 0)

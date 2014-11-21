@@ -81,7 +81,7 @@ let spawn (prog, args) env ?(stdin:redirection=`Keep) ?(stdout:redirection=`Keep
           None
       | Some env ->
           let len = Array.fold_left (fun len str -> String.length str + len + 1) 1 env in
-          let res = String.create len in
+          let res = Bytes.create len in
           let ofs =
             Array.fold_left
               (fun ofs str ->

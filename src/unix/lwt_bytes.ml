@@ -85,7 +85,7 @@ let of_string str =
 
 let to_string bytes =
   let len = length bytes in
-  let str = String.create len in
+  let str = Bytes.create len in
   unsafe_blit_bytes_string bytes 0 str 0 len;
   str
 

@@ -29,7 +29,7 @@ let suite = suite "lwt_io" [
     (fun () ->
        let sent = ref [] in
        let oc = Lwt_io.make ~mode:output (fun buf ofs len ->
-                                            let str = String.create len in
+                                            let str = Bytes.create len in
                                             Lwt_bytes.blit_bytes_string buf ofs str 0 len;
                                             sent := str :: !sent;
                                             return len) in
@@ -45,7 +45,7 @@ let suite = suite "lwt_io" [
     (fun () ->
        let sent = ref [] in
        let oc = make ~mode:output (fun buf ofs len ->
-                                     let str = String.create len in
+                                     let str = Bytes.create len in
                                      Lwt_bytes.blit_bytes_string buf ofs str 0 len;
                                      sent := str :: !sent;
                                      return len) in
