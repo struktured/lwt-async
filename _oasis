@@ -5,7 +5,7 @@
 OASISFormat: 0.3
 OCamlVersion: >= 3.12
 Name: lwt
-Version: 2.4.2
+Version: 2.4.6
 LicenseFile: COPYING
 License: LGPL-2.1 with OCaml linking exception
 Authors:
@@ -47,6 +47,10 @@ Flag all
 
 Flag syntax
   Description: Build the syntax extension
+  Default: true
+
+Flag ppx
+  Description: Build the ppx syntax extension
   Default: true
 
 Flag unix
@@ -298,6 +302,25 @@ Library "lwt-syntax-log"
   XMETADescription: Syntactic sugars for logging
   XMETARequires: camlp4, lwt.syntax.options
 
+Library "ppx"
+  Build$: flag(ppx) || flag(all)
+  Install$: flag(ppx) || flag(all)
+  FindlibName: ppx
+  FindlibParent: lwt
+  Path: ppx
+  Modules: Ppx_lwt
+  XMETADescription: New-style (ppx) syntax extension
+  XMETARequires:    lwt
+  XMETAExtraLines:  ppx = "ppx_lwt"
+
+Executable "ppx_lwt"
+  Build$: flag(ppx) || flag(all)
+  Install$: flag(ppx) || flag(all)
+  Path: ppx
+  MainIs: ppx_lwt_ex.ml
+  BuildDepends: compiler-libs.common, ppx_tools.metaquot
+  CompiledObject: best
+
 # +-------------------------------------------------------------------+
 # | Toplevel                                                          |
 # +-------------------------------------------------------------------+
@@ -342,7 +365,8 @@ Document "lwt-api"
     lwt.log,
     lwt.unix,
     lwt.syntax,
-    lwt.syntax.log
+    lwt.syntax.log,
+    lwt.ppx
 
 # +-------------------------------------------------------------------+
 # | Examples                                                          |
@@ -415,6 +439,15 @@ Executable test_preemptive
   MainIs: main.ml
   BuildDepends: test, lwt, unix, lwt.unix, lwt.preemptive, threads
 
+Executable test_ppx
+  Path: tests/ppx
+  Build$: flag(tests) && ((flag(ppx) && flag(unix)) || flag(all))
+  Install: false
+  CompiledObject: best
+  MainIs: main.ml
+  BuildTools: ppx_lwt
+  BuildDepends: test, lwt, lwt.unix
+
 Test core
   Command: $test_core
   TestTools: test_core
@@ -434,6 +467,11 @@ Test preemptive
   Command: $test_preemptive
   TestTools: test_preemptive
   Run$: flag(tests) && ((flag(preemptive) && flag(unix)) || flag(all))
+
+Test ppx
+  Command: $test_ppx
+  TestTools: test_ppx
+  Run$: flag(tests) && ((flag(ppx) && flag(unix)) || flag(all))
 
 # +-------------------------------------------------------------------+
 # | Misc                                                              |
