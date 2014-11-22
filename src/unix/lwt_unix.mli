@@ -61,7 +61,7 @@ val handle_unix_error : ('a -> 'b Lwt.t) -> 'a -> 'b Lwt.t
   (** Same as [Unix.handle_unix_error] but catches lwt-level
       exceptions *)
 
-(** {6 Configuration} *)
+(** {2 Configuration} *)
 
 (** For system calls that cannot be made asynchronously, Lwt uses one
     of the following method: *)
@@ -125,7 +125,7 @@ val with_async_switch : (unit -> 'a) -> 'a
       ]}
   *)
 
-(** {6 Sleeping} *)
+(** {2 Sleeping} *)
 
 val sleep : float -> unit Lwt.t
   (** [sleep d] is a thread that remains suspended for [d] seconds
@@ -154,7 +154,7 @@ val with_timeout : float -> (unit -> 'a Lwt.t) -> 'a Lwt.t
       ]}
   *)
 
-(** {6 Operation on file-descriptors} *)
+(** {2 Operation on file-descriptors} *)
 
 type file_descr
   (** The abstract type for {b file descriptor}s. A Lwt {b file
@@ -228,7 +228,7 @@ val abort : file_descr -> exn -> unit
       Note that this only works for reading and writing operations on
       file descriptors supporting non-blocking mode. *)
 
-(** {6 Process handling} *)
+(** {2 Process handling} *)
 
 val fork : unit -> [ `Not_supported_by_Lwt_Async ]
 
@@ -275,7 +275,7 @@ val system : string -> process_status Lwt.t
       shell [/bin/sh] on Unix and [cmd.exe] on Windows. The result
       [WEXITED 127] indicates that the shell couldn't be executed. *)
 
-(** {6 Basic file input/output} *)
+(** {2 Basic file input/output} *)
 
 val stdin : file_descr
   (** The standard {b file descriptor} for input. This one is usually
@@ -341,7 +341,7 @@ val wait_write : file_descr -> unit Lwt.t
   (** waits (without blocking other threads) until it is possible to
       write on the file descriptor *)
 
-(** {6 Seeking and truncating} *)
+(** {2 Seeking and truncating} *)
 
 type seek_command =
     Unix.seek_command =
@@ -358,7 +358,7 @@ val truncate : string -> int -> unit Lwt.t
 val ftruncate : file_descr -> int -> unit Lwt.t
   (** Wrapper for [Unix.ftruncate] *)
 
-(** {6 Syncing} *)
+(** {2 Syncing} *)
 
 val fsync : file_descr -> unit Lwt.t
   (** Synchronise all data and metadata of the file descriptor with
@@ -370,7 +370,7 @@ val fdatasync : file_descr -> unit Lwt.t
 
       Note that [fdatasync] is not available on all platforms. *)
 
-(** {6 File status} *)
+(** {2 File status} *)
 
 type file_kind =
     Unix.file_kind =
@@ -411,7 +411,7 @@ val fstat : file_descr -> stats Lwt.t
 val isatty : file_descr -> bool Lwt.t
   (** Wrapper for [Unix.isatty] *)
 
-(** {6 File operations on large files} *)
+(** {2 File operations on large files} *)
 
 module LargeFile : sig
   val lseek : file_descr -> int64 -> seek_command -> int64 Lwt.t
@@ -450,7 +450,7 @@ module LargeFile : sig
     (** Wrapper for [Unix.LargeFile.fstat] *)
 end
 
-(** {6 Operations on file names} *)
+(** {2 Operations on file names} *)
 
 val unlink : string -> unit Lwt.t
   (** Wrapper for [Unix.unlink] *)
@@ -461,7 +461,7 @@ val rename : string -> string -> unit Lwt.t
 val link : string -> string -> unit Lwt.t
   (** Wrapper for [Unix.link] *)
 
-(** {6 File permissions and ownership} *)
+(** {2 File permissions and ownership} *)
 
 val chmod : string -> file_perm -> unit Lwt.t
   (** Wrapper for [Unix.chmod] *)
@@ -485,7 +485,7 @@ type access_permission =
 val access : string -> access_permission list -> unit Lwt.t
   (** Wrapper for [Unix.access] *)
 
-(** {6 Operations on file descriptors} *)
+(** {2 Operations on file descriptors} *)
 
 val dup : file_descr -> file_descr
   (** Wrapper for [Unix.dup] *)
@@ -499,7 +499,7 @@ val set_close_on_exec : file_descr -> unit
 val clear_close_on_exec : file_descr -> unit
   (** Wrapper for [Unix.clear_close_on_exec] *)
 
-(** {6 Directories} *)
+(** {2 Directories} *)
 
 val mkdir : string -> file_perm -> unit Lwt.t
   (** Wrapper for [Unix.mkdir] *)
@@ -538,7 +538,7 @@ val files_of_directory : string -> string Lwt_stream.t
   (** [files_of_directory dir] returns the stream of all files of
       [dir]. *)
 
-(** {6 Pipes and redirections} *)
+(** {2 Pipes and redirections} *)
 
 val pipe : unit -> file_descr * file_descr
   (** [pipe ()] creates pipe using [Unix.pipe] and returns two lwt {b
@@ -557,7 +557,7 @@ val pipe_out : unit -> Unix.file_descr * file_descr
 val mkfifo : string -> file_perm -> unit Lwt.t
   (** Wrapper for [Unix.mkfifo] *)
 
-(** {6 Symbolic links} *)
+(** {2 Symbolic links} *)
 
 val symlink : string -> string -> unit Lwt.t
   (** Wrapper for [Unix.symlink] *)
@@ -565,7 +565,7 @@ val symlink : string -> string -> unit Lwt.t
 val readlink : string -> string Lwt.t
   (** Wrapper for [Unix.readlink] *)
 
-(** {6 Locking} *)
+(** {2 Locking} *)
 
 type lock_command =
     Unix.lock_command =
@@ -579,7 +579,7 @@ type lock_command =
 val lockf : file_descr -> lock_command -> int -> unit Lwt.t
   (** Wrapper for [Unix.lockf] *)
 
-(** {6 User id, group id} *)
+(** {2 User id, group id} *)
 
 type passwd_entry =
     Unix.passwd_entry =
@@ -617,7 +617,7 @@ val getpwuid : int -> passwd_entry Lwt.t
 val getgrgid : int -> group_entry Lwt.t
   (** Wrapper for [Unix.getgrgid] *)
 
-(** {6 Signals} *)
+(** {2 Signals} *)
 
 type signal_handler_id
   (** Id of a signal handler, used to cancel it *)
@@ -644,7 +644,7 @@ val reinstall_signal_handler : int -> unit
       signal handler (with [Sys.set_signal]). This is usefull in case
       another part of the program install another signal handler. *)
 
-(** {6 Sockets} *)
+(** {2 Sockets} *)
 
 type inet_addr = Unix.inet_addr
 
@@ -779,7 +779,7 @@ val get_credentials : file_descr -> credentials
 
       This call is not available on windows. *)
 
-(** {8 Socket options} *)
+(** {3 Socket options} *)
 
 type socket_bool_option =
     Unix.socket_bool_option =
@@ -836,7 +836,7 @@ val setsockopt_float : file_descr -> socket_float_option -> float -> unit
 val getsockopt_error : file_descr -> Unix.error option
   (** Wrapper for [Unix.getsockopt_error] *)
 
-(** {6 Host and protocol databases} *)
+(** {2 Host and protocol databases} *)
 
 type host_entry =
     Unix.host_entry =
@@ -925,7 +925,7 @@ type getnameinfo_option =
 val getnameinfo : sockaddr -> getnameinfo_option list -> name_info Lwt.t
   (** Wrapper for [Unix.getnameinfo] *)
 
-(** {6 Terminal interface} *)
+(** {2 Terminal interface} *)
 
 type terminal_io =
     Unix.terminal_io =
@@ -1007,7 +1007,7 @@ type flow_action =
 val tcflow : file_descr -> flow_action -> unit Lwt.t
   (** Wrapper for [Unix.tcflow] *)
 
-(** {6 Low-level interaction} *)
+(** {2 Low-level interaction} *)
 
 exception Retry
   (** If an action raises {!Retry}, it will be requeued until the {b
@@ -1097,7 +1097,7 @@ val cancel_jobs : unit -> unit
 val wait_for_jobs : unit -> unit Lwt.t
   (** Wait for all pending jobs to terminate. *)
 
-(** {6 Notifications} *)
+(** {2 Notifications} *)
 
 (** Lwt internally use a pipe to send notification to the main
     thread. The following functions allow to use this pipe. *)
@@ -1129,7 +1129,7 @@ val set_notification : int -> (unit -> unit) -> unit
       notification by [f]. It raises [Not_found] if the given
       notification is not found. *)
 
-(** {6 System threads pool} *)
+(** {2 System threads pool} *)
 
 (** If the program is using the async method {!Async_detach} or
     {!Async_switch}, Lwt will launch system threads to execute
@@ -1148,7 +1148,7 @@ val thread_count : unit -> [ `Not_supported_by_Lwt_Async ]
 val thread_waiting_count : unit -> [ `Not_supported_by_Lwt_Async ]
   (** The number threads waiting for a job. *)
 
-(** {6 CPUs} *)
+(** {2 CPUs} *)
 
 val get_cpu : unit -> int
   (** [get_cpu ()] returns the number of the CPU the current thread is
