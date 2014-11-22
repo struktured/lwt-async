@@ -28,7 +28,9 @@ open Printf
    | Search path                                                     |
    +-----------------------------------------------------------------+ *)
 
-(* List of search paths for header files, mostly for MacOS users.
+(* List of search paths for header files, mostly for MacOS
+   users. 
+
 
    We use a hardcorded list of path + the ones from C_INCLUDE_PATH and
    LIBRARY_PATH.
@@ -37,9 +39,10 @@ open Printf
 let ( // ) = Filename.concat
 
 let default_search_paths =
-  List.map (fun dir -> (dir ^ "/include", dir ^ "/lib")) [
+  List.map (fun dir -> (dir // "include", dir // "lib")) [
     "/usr";
     "/usr/local";
+    "/usr/pkg";
     "/opt";
     "/opt/local";
     "/sw";
@@ -59,6 +62,16 @@ let split_path str =
   in
   aux 0
 
+let rec replace_last path ~patt ~repl =
+  let comp = Filename.basename path
+  and parent = Filename.dirname path in
+  if comp = patt then
+    parent // repl
+  else if parent = path then
+    path
+  else
+    (replace_last parent ~patt ~repl) // comp
+
 let search_paths =
   let get var f =
     try
@@ -67,8 +80,8 @@ let search_paths =
       []
   in
   List.flatten [
-    get "C_INCLUDE_PATH" (fun dir -> (dir, dir // ".." // "lib"));
-    get "LIBRARY_PATH" (fun dir -> (dir // ".." // "include", dir));
+    get "C_INCLUDE_PATH" (fun dir -> (dir, replace_last dir ~patt:"include" ~repl:"lib"));
+    get "LIBRARY_PATH" (fun dir -> (replace_last dir ~patt:"lib" ~repl:"include", dir));
     default_search_paths;
   ]
 
@@ -91,6 +104,7 @@ CAMLprim value lwt_test()
   return Val_unit;
 }
 "
+
 
 let fd_passing_code = "
 #include <caml/mlvalues.h>
@@ -211,6 +225,8 @@ CAMLprim value lwt_test()
    +-----------------------------------------------------------------+ *)
 
 let ocamlc = ref "ocamlc"
+let cc = ref "cc"
+let standard_library = ref "/usr/lib/ocaml"
 let ext_obj = ref ".o"
 let exec_name = ref "a.out"
 let use_glib = ref false
@@ -219,6 +235,15 @@ let use_unix = ref true
 let os_type = ref "Unix"
 let android_target = ref false
 let ccomp_type = ref "cc"
+let debug = ref (try Sys.getenv "DEBUG" = "y" with Not_found -> false)
+
+let dprintf fmt =
+  if !debug then
+    (
+      eprintf "DBG: ";
+      kfprintf (fun oc -> fprintf oc "\n%!") stderr fmt
+    )
+  else ifprintf stderr fmt
 
 let log_file = ref ""
 let caml_file = ref ""
@@ -236,23 +261,40 @@ let search_header header =
   in
   loop search_paths
 
+(* CFLAGS should not be passed to the linker. *)
 let compile (opt, lib) stub_file =
-  ksprintf
-    Sys.command
-    "%s -custom %s %s %s %s > %s 2>&1"
-    !ocamlc
-    (String.concat " " (List.map (sprintf "-ccopt %s") opt))
+  let cmd fmt = ksprintf (fun s ->
+    dprintf "RUN: %s" s;
+    Sys.command s = 0) fmt in
+  let obj_file = Filename.chop_suffix stub_file ".c" ^ !ext_obj
+  in
+  (* First compile the .c file using CC and the CFLAGS (opt) *)
+  (cmd
+    "%s -c -I%s %s %s -o %s >> %s 2>&1"
+    !cc
+    (Filename.quote !standard_library)
+    (String.concat " " (List.map Filename.quote opt))
     (Filename.quote stub_file)
+    (Filename.quote obj_file)
+    (Filename.quote !log_file))
+  &&
+  (* Now link the resulting .o with the LDFLAGS (lib) *)
+  (cmd
+    "%s -custom %s %s %s >> %s 2>&1"
+    !ocamlc
+    (Filename.quote obj_file)
     (Filename.quote !caml_file)
     (String.concat " " (List.map (sprintf "-cclib %s") lib))
-    (Filename.quote !log_file)
-  = 0
+    (Filename.quote !log_file))
 
 let safe_remove file_name =
-  try
-    Sys.remove file_name
-  with exn ->
-    ()
+  if !debug then
+    dprintf "DEBUG: Not removing %s\n" file_name
+  else
+    try
+      Sys.remove file_name
+    with exn ->
+      ()
 
 let test_code args stub_code =
   let stub_file, oc = Filename.open_temp_file "lwt_stub" ".c" in
@@ -388,6 +430,8 @@ let arg_bool r =
 let () =
   let args = [
     "-ocamlc", Arg.Set_string ocamlc, "<path> ocamlc";
+    "-cc", Arg.Set_string cc, "<path> C compiler";
+    "-standard-library", Arg.Set_string standard_library, "<path> Path to Ocaml standard library";
     "-ext-obj", Arg.Set_string ext_obj, "<ext> C object files extension";
     "-exec-name", Arg.Set_string exec_name, "<name> name of the executable produced by ocamlc";
     "-use-glib", arg_bool use_glib, " whether to check for glib";
@@ -423,7 +467,7 @@ let () =
   let setup_data = ref [] in
 
   (* Test for pkg-config. *)
-  test_feature ~do_check:!use_glib "pkg-config" ""
+  test_feature ~do_check:(!use_glib) "pkg-config" ""
     (fun () ->
        ksprintf Sys.command "pkg-config --version > %s 2>&1" !log_file = 0);
 
@@ -469,8 +513,9 @@ let () =
     printf "
 The following recquired C libraries are missing: %s.
 Please install them and retry. If they are installed in a non-standard location
-or need special flags, set the environment variables <LIB>_CLFAGS and <LIB>_LIBS
+or need special flags, set the environment variables <LIB>_CFLAGS and <LIB>_LIBS
 accordingly and retry.
+
 " (String.concat ", " !not_available);
     exit 1
   end;
