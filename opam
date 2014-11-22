@@ -4,7 +4,6 @@ version: "dev"
 build: [
   ["./configure"
     "--prefix" prefix
-    "--%{conf-libev:enable}%-libev"
     "--%{react:enable}%-react"
     "--%{ssl:enable}%-ssl"
     "--%{base-unix:enable}%-unix"
