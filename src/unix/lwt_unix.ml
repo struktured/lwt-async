@@ -2142,13 +2142,15 @@ let system cmd =
 
 #else
 
+external sys_exit : int -> 'a = "caml_sys_exit"
+
 let system cmd =
   match Unix.fork () with
     | 0 ->
         begin try
           Unix.execv "/bin/sh" [| "/bin/sh"; "-c"; cmd |]
         with _ ->
-          exit 127
+          sys_exit 127
         end
     | id ->
         waitpid [] id >|= snd
