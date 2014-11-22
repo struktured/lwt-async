@@ -26,20 +26,11 @@
 open Lwt
 include Lwt_log_core
 
-let program_name = Filename.basename Sys.argv.(0)
+let program_name = Filename.basename Sys.executable_name
 
 (* Errors happening in this module are always logged to [stderr]: *)
 let log_intern fmt =
   Printf.eprintf ("%s: Lwt_log: " ^^ fmt ^^ "\n%!") program_name
-
-(* +-----------------------------------------------------------------+
-   | Rules                                              |
-   +-----------------------------------------------------------------+ *)
-
-let _ =
-  match try Some(Sys.getenv "LWT_LOG") with Not_found -> None with
-    | Some str -> Lwt_log_core.load_rules str
-    | None -> ()
 
 (* +-----------------------------------------------------------------+
    | Templates                                                       |
@@ -119,7 +110,7 @@ let file ?(template="$(date): $(section): $(message)") ?(mode=`Append) ?(perm=0o
         [Unix.O_WRONLY; Unix.O_CREAT; Unix.O_APPEND; Unix.O_NONBLOCK]
     | `Truncate ->
         [Unix.O_WRONLY; Unix.O_CREAT; Unix.O_TRUNC; Unix.O_NONBLOCK] in
-  lwt fd = Lwt_unix.openfile file_name flags 0o666 in
+  lwt fd = Lwt_unix.openfile file_name flags perm in
   Lwt_unix.set_close_on_exec fd;
   let oc = Lwt_io.of_fd ~mode:Lwt_io.output fd in
   return (channel ~template ~close_mode:`Close ~channel:oc ())
