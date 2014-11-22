@@ -20,6 +20,8 @@
  * 02111-1307, USA.
  *)
 
+#include "src/unix/lwt_config.ml"
+
 open Lwt
 
 exception Channel_closed of string
@@ -214,7 +216,16 @@ let perform_io ch = match ch.main.state with
                   (size, ch.length - size)
               | Output ->
                   (0, ch.ptr) in
-            lwt n = pick [ch.abort_waiter; perform_io ch.buffer ptr len] in
+            lwt n = pick [ch.abort_waiter;
+#if windows
+                          try_lwt
+                            perform_io ch.buffer ptr len
+                          with Unix.Unix_error (Unix.EPIPE, _, _) ->
+                            return 0
+#else
+                          perform_io ch.buffer ptr len
+#endif
+                         ] in
             (* Never trust user functions... *)
             if n < 0 || n > len then
               raise_lwt (Failure (Printf.sprintf "Lwt_io: invalid result of the [%s] function(request=%d,result=%d)"
@@ -1388,8 +1399,11 @@ let with_file ?buffer_size ?flags ?perm ~mode filename f =
 
 let file_length filename = with_file ~mode:input filename length
 
-let open_connection ?buffer_size sockaddr =
-  let fd = Lwt_unix.socket (Unix.domain_of_sockaddr sockaddr) Unix.SOCK_STREAM 0 in
+let open_connection ?fd ?buffer_size sockaddr =
+  let fd = match fd with
+    | None -> Lwt_unix.socket (Unix.domain_of_sockaddr sockaddr) Unix.SOCK_STREAM 0
+    | Some fd -> fd
+  in
   let close = lazy begin
     try_lwt
       Lwt_unix.shutdown fd Unix.SHUTDOWN_ALL;
@@ -1413,8 +1427,8 @@ let open_connection ?buffer_size sockaddr =
     lwt () = Lwt_unix.close fd in
     raise_lwt exn
 
-let with_connection ?buffer_size sockaddr f =
-  lwt ic, oc = open_connection ?buffer_size sockaddr in
+let with_connection ?fd ?buffer_size sockaddr f =
+  lwt ic, oc = open_connection ?fd ?buffer_size sockaddr in
   try_lwt
     f (ic, oc)
   finally
@@ -1426,8 +1440,11 @@ type server = {
 
 let shutdown_server server = Lazy.force server.shutdown
 
-let establish_server ?buffer_size ?(backlog=5) sockaddr f =
-  let sock = Lwt_unix.socket (Unix.domain_of_sockaddr sockaddr) Unix.SOCK_STREAM 0 in
+let establish_server ?fd ?buffer_size ?(backlog=5) sockaddr f =
+  let sock = match fd with
+    | None -> Lwt_unix.socket (Unix.domain_of_sockaddr sockaddr) Unix.SOCK_STREAM 0
+    | Some fd -> fd
+  in
   Lwt_unix.setsockopt sock Unix.SO_REUSEADDR true;
   Lwt_unix.bind sock sockaddr;
   Lwt_unix.listen sock backlog;

@@ -22,26 +22,25 @@
 
 (** Buffered byte channels *)
 
-(** A {b channel} is a high-level object for performing IOs. It allow
-    to read/write things from/to the outside worlds in an efficient
-    way, by minimising the number of system calls.
+(** A {b channel} is a high-level object for performing input/output
+    (IO). It allows to read/write from/to the outside world in an
+    efficient way, by minimising the number of system calls.
 
-    An {b output channel} is a channel that can be used to send data
-    and an {b input channel} is a channel that can used to receive
-    data.
+    An {b output channel} is used to send data and an {b input
+    channel} is used to receive data.
 
     If you are familiar with buffered channels you may be familiar too
-    with the {b flush} operation. Note that byte channles of this
-    modules are automatically flushed when there is nothing else to do
-    (i.e. before the program goes into idle), so this means that you
-    no longer have to write:
+    with the {b flush} operation. Note that byte channels of this
+    module are automatically flushed when there is nothing else to do
+    (i.e. before the program becomes idle), so this means that you no
+    longer have to write:
 
     {[
       eprintf "log message\n";
       flush stderr;
     ]}
 
-    to have you messages displayed.
+    to have your messages displayed.
 
     Note about errors: input functions of this module raise
     [End_of_file] when the end-of-file is reached (i.e. when the read
@@ -53,7 +52,7 @@ exception Channel_closed of string
   (** Exception raised when a channel is closed. The parameter is a
       description of the channel. *)
 
-(** {6 Types} *)
+(** {2 Types} *)
 
 type 'mode channel
   (** Type of buffered byte channels *)
@@ -91,7 +90,7 @@ type output_channel = output channel
 val mode : 'a channel -> 'a mode
   (** [mode ch] returns the mode of a channel *)
 
-(** {6 Well-known instances} *)
+(** {2 Well-known instances} *)
 
 val stdin : input_channel
   (** The standard input, it reads data from {!Lwt_unix.stdin} *)
@@ -109,7 +108,7 @@ val zero : input_channel
 val null : output_channel
   (** Output which drops everything *)
 
-(** {6 Channels creation/manipulation} *)
+(** {2 Channels creation/manipulation} *)
 
 val pipe : ?buffer_size : int -> unit -> input_channel * output_channel
   (** [pipe ?buffer_size ()] creates a pipe using {!Lwt_unix.pipe} and
@@ -155,19 +154,19 @@ val of_unix_fd : ?buffer_size : int -> ?close : (unit -> unit Lwt.t) -> mode : '
 
 val close : 'a channel -> unit Lwt.t
   (** [close ch] closes the given channel. If [ch] is an output
-      channel, it performs all pending actions, flush it and close
-      it. If [ch] is an input channel, it just close it immediatly.
+      channel, it performs all pending actions, flushes it and closes
+      it. If [ch] is an input channel, it just closes it immediately.
 
       [close] returns the result of the close function of the
       channel. Multiple calls to [close] will return exactly the same
       value.
 
-      Note: you cannot use [close] on channel obtained with an
+      Note: you cannot use [close] on channels obtained with
       {!atomic}. *)
 
 val abort : 'a channel -> unit Lwt.t
   (** [abort ch] abort current operations and close the channel
-      immediatly. *)
+      immediately. *)
 
 val atomic : ('a channel -> 'b Lwt.t) -> ('a channel -> 'b Lwt.t)
   (** [atomic f] transforms a sequence of io operations into one
@@ -200,19 +199,19 @@ val is_busy : 'a channel -> bool
       busy. A channel is busy when there is at least one job using it
       that has not yet terminated. *)
 
-(** {6 Random access} *)
+(** {2 Random access} *)
 
 val position : 'a channel -> int64
   (** [position ch] Returns the current position in the channel. *)
 
 val set_position : 'a channel -> int64 -> unit Lwt.t
   (** [set_position ch pos] Sets the position in the output channel. This
-      does not work if the channel do not support random access. *)
+      does not work if the channel does not support random access. *)
 
 val length : 'a channel -> int64 Lwt.t
   (** Returns the length of the channel in bytes *)
 
-(** {6 Reading} *)
+(** {2 Reading} *)
 
 (** Note: except for functions dealing with streams ({!read_chars} and
     {!read_lines}) all functions are {b atomic}. *)
@@ -223,7 +222,7 @@ val read_char : input_channel -> char Lwt.t
       @raise End_of_file if the end of the file is reached *)
 
 val read_char_opt : input_channel -> char option Lwt.t
-  (** Same as {!read_byte} but does not raises [End_of_file] on end of
+  (** Same as {!read_byte} but does not raise [End_of_file] on end of
       input *)
 
 val read_chars : input_channel -> char Lwt_stream.t
@@ -269,12 +268,12 @@ val read_into_exactly : input_channel -> string -> int -> int -> unit Lwt.t
 val read_value : input_channel -> 'a Lwt.t
   (** [read_value ic] reads a marshaled value from [ic] *)
 
-(** {6 Writing} *)
+(** {2 Writing} *)
 
 (** Note: as for reading functions, all functions except
     {!write_chars} and {!write_lines} are {b atomic}.
 
-    For example if you use {!write_line} in to different threads, the
+    For example if you use {!write_line} in two different threads, the
     two operations will be serialized, and lines cannot be mixed.
 *)
 
@@ -307,15 +306,15 @@ val write_from_exactly : output_channel -> string -> int -> int -> unit Lwt.t
 val write_value : output_channel -> ?flags : Marshal.extern_flags list -> 'a -> unit Lwt.t
   (** [write_value oc ?flags x] marshals the value [x] to [oc] *)
 
-(** {6 Printing} *)
+(** {2 Printing} *)
 
-(** These functions are basically helpers. Also you may prefer the
+(** These functions are basically helpers. Also you may prefer
     using the name {!printl} rather than {!write_line} because it is
     shorter.
 
-    The general name of a printing function is [<prefix>print<suffixes>].
+    The general name of a printing function is [<prefix>print<suffixes>],
 
-    Where [<prefix>] is one of:
+    where [<prefix>] is one of:
     - ['f'], which means that the function takes as argument a channel
     - nothing, which means that the function prints on {!stdout}
     - ['e'], which means that the function prints on {!stderr}
@@ -339,7 +338,7 @@ val eprintl : string -> unit Lwt.t
 val eprintf : ('a, unit, string, unit Lwt.t) format4 -> 'a
 val eprintlf : ('a, unit, string, unit Lwt.t) format4 -> 'a
 
-(** {6 Utilities} *)
+(** {2 Utilities} *)
 
 val hexdump_stream : output_channel -> char Lwt_stream.t -> unit Lwt.t
   (** [hexdump_stream oc byte_stream] produces the same output as the
@@ -348,7 +347,7 @@ val hexdump_stream : output_channel -> char Lwt_stream.t -> unit Lwt.t
 val hexdump : output_channel -> string -> unit Lwt.t
   (** [hexdump oc str = hexdump_stream oc (Lwt_stream.of_string str)] *)
 
-(** {6 File utilities} *)
+(** {2 File utilities} *)
 
 type file_name = string
     (** Type of file names *)
@@ -359,7 +358,7 @@ val open_file :
   ?perm : Unix.file_perm ->
   mode : 'a mode ->
   file_name -> 'a channel Lwt.t
-  (** [open_file ?buffer_size ?flags ?perm ~mode filename] open the
+  (** [open_file ?buffer_size ?flags ?perm ~mode filename] opens the
       file with name [filename] and returns a channel for
       reading/writing it.
 
@@ -372,34 +371,44 @@ val with_file :
   ?perm : Unix.file_perm ->
   mode : 'a mode ->
   file_name -> ('a channel -> 'b Lwt.t) -> 'b Lwt.t
-  (** [with_file ?buffer_size ?flags ?perm ~mode filename f] open a
+  (** [with_file ?buffer_size ?flags ?perm ~mode filename f] opens a
       file and passes the channel to [f]. It is ensured that the
       channel is closed when [f ch] terminates (even if it fails). *)
 
-val open_connection : ?buffer_size : int -> Unix.sockaddr -> (input_channel * output_channel) Lwt.t
-  (** [open_connection ?buffer_size addr] open a connection to
-      the given address and returns two channels for using it.
+val open_connection :
+  ?fd : Lwt_unix.file_descr ->
+  ?buffer_size : int -> Unix.sockaddr -> (input_channel * output_channel) Lwt.t
+(** [open_connection ?fd ?buffer_size addr] opens a connection to the
+    given address and returns two channels for using it. If [fd] is
+    not specified, a fresh one will be used.
 
-      The connection is completly closed when you close both
-      channels.
+    The connection is completly closed when you close both
+    channels.
 
-      @raise Unix.Unix_error on error.
-  *)
+    @raise Unix.Unix_error on error.
+*)
 
-val with_connection : ?buffer_size : int -> Unix.sockaddr -> (input_channel * output_channel -> 'a Lwt.t) -> 'a Lwt.t
-  (** [with_connection ?buffer_size addr f] open a connection to
+val with_connection :
+  ?fd : Lwt_unix.file_descr ->
+  ?buffer_size : int ->
+  Unix.sockaddr -> (input_channel * output_channel -> 'a Lwt.t) -> 'a Lwt.t
+(** [with_connection ?fd ?buffer_size addr f] opens a connection to
       the given address and passes the channels to [f] *)
 
 type server
   (** Type of a server *)
 
-val establish_server : ?buffer_size : int -> ?backlog : int -> Unix.sockaddr -> (input_channel * output_channel -> unit) -> server
-  (** [establish_server ?buffer_size ?backlog sockaddr f] creates a
-      server which will listen for incoming connections. New
-      connections are passed to [f]. Note that [f] must not raise any
-      exception.
+val establish_server :
+  ?fd : Lwt_unix.file_descr ->
+  ?buffer_size : int ->
+  ?backlog : int ->
+  Unix.sockaddr -> (input_channel * output_channel -> unit) -> server
+(** [establish_server ?fd ?buffer_size ?backlog sockaddr f] creates a
+    server which will listen for incoming connections. New connections
+    are passed to [f]. Note that [f] must not raise any exception. If
+    [fd] is not specified, a fresh file descriptor will be created.
 
-      [backlog] is the argument passed to [Lwt_unix.listen] *)
+    [backlog] is the argument passed to [Lwt_unix.listen] *)
 
 val shutdown_server : server -> unit
   (** Shutdown the given server *)
@@ -411,7 +420,7 @@ val lines_of_file : file_name -> string Lwt_stream.t
 
 val lines_to_file : file_name -> string Lwt_stream.t -> unit Lwt.t
   (** [lines_to_file name lines] writes all lines of [lines] to
-      [files] *)
+      file with name [name]. *)
 
 val chars_of_file : file_name -> char Lwt_stream.t
   (** [chars_of_file name] returns a stream of all characters of the
@@ -422,12 +431,12 @@ val chars_to_file : file_name -> char Lwt_stream.t -> unit Lwt.t
   (** [chars_to_file name chars] writes all characters of [chars] to
       [name] *)
 
-(** {6 Input/output of integers} *)
+(** {2 Input/output of integers} *)
 
 (** Common interface for reading/writing integers in binary *)
 module type NumberIO = sig
 
-  (** {8 Reading} *)
+  (** {3 Reading} *)
 
   val read_int : input_channel -> int Lwt.t
     (** Reads a 32-bits integer as an ocaml int *)
@@ -442,7 +451,7 @@ module type NumberIO = sig
   val read_float64 : input_channel -> float Lwt.t
     (** Reads an IEEE double precision floating point value *)
 
-  (** {8 Writing} *)
+  (** {3 Writing} *)
 
   val write_int : output_channel -> int -> unit Lwt.t
     (** Writes an ocaml int as a 32-bits integer *)
@@ -473,15 +482,15 @@ type byte_order = Lwt_sys.byte_order = Little_endian | Big_endian
 val system_byte_order : byte_order
   (** Same as {!Lwt_sys.byte_order}. *)
 
-(** {6 Low-level access to the internal buffer} *)
+(** {2 Low-level access to the internal buffer} *)
 
 val block : 'a channel  -> int -> (Lwt_bytes.t -> int -> 'b Lwt.t) -> 'b Lwt.t
   (** [block ch size f] pass to [f] the internal buffer and an
       offset. The buffer contains [size] chars at [offset]. [f] may
-      reads or writes these chars.  [size] must verify [0 <= size <=
+      read or write these chars.  [size] must satisfy [0 <= size <=
       16] *)
 
-(** Informations for accessing directly to the internal buffer of a
+(** Information for directly accessing the internal buffer of a
     channel *)
 type direct_access = {
   da_buffer : Lwt_bytes.t;
@@ -494,21 +503,21 @@ type direct_access = {
   (** The maximum offset *)
   da_perform : unit -> int Lwt.t;
   (** - for input channels:
-        refill the buffer and returns how many bytes have been read
+        refills the buffer and returns how many bytes have been read
       - for output channels:
         flush partially the buffer and returns how many bytes have been written *)
 }
 
 val direct_access : 'a channel -> (direct_access -> 'b Lwt.t) -> 'b Lwt.t
-  (** [direct_access ch f] pass to [f] a {!direct_access}
+  (** [direct_access ch f] passes to [f] a {!direct_access}
       structure. [f] must use it and update [da_ptr] to reflect how
       many bytes have been read/written. *)
 
-(** {6 Misc} *)
+(** {2 Misc} *)
 
 val default_buffer_size : unit -> int
   (** Return the default size for buffers. Channels that are created
-      without specific size use this one. *)
+      without a specific size use this one. *)
 
 val set_default_buffer_size : int -> unit
   (** Change the default buffer size.
