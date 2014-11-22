@@ -29,7 +29,6 @@ depends: [
 depopts: [
   "base-threads"
   "base-unix"
-  "conf-libev"
   "ssl"
   "lablgtk"
   "text"
