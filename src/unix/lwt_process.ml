@@ -179,6 +179,8 @@ let map_args args =
   end else
     args
 
+external sys_exit : int -> 'a = "caml_sys_exit"
+
 let spawn (prog, args) env ?(stdin:redirection=`Keep) ?(stdout:redirection=`Keep) ?(stderr:redirection=`Keep) toclose =
   let prog = if prog = "" && Array.length args > 0 then args.(0) else prog in
   match Unix.fork () with
@@ -195,10 +197,8 @@ let spawn (prog, args) env ?(stdin:redirection=`Keep) ?(stdout:redirection=`Keep
               | Some env ->
                   Unix.execvpe prog args env
           with _ ->
-            (* Prevent exit hooks from running, they are not supposed
-               to be executed here. *)
-            Lwt_sequence.iter_node_l Lwt_sequence.remove Lwt_main.exit_hooks;
-            exit 127
+            (* Do not run at_exit hooks *)
+            sys_exit 127
         end
     | id ->
         let close = function
@@ -364,7 +364,7 @@ let with_process_full ?timeout ?env cmd f = make_with open_process_full ?timeout
 
 let exec ?timeout ?env ?stdin ?stdout ?stderr cmd = (open_process_none ?timeout ?env ?stdin ?stdout ?stderr cmd)#close
 
-let ingore_close ch =
+let ignore_close ch =
   ignore (Lwt_io.close ch)
 
 let read_opt read ic =
@@ -375,7 +375,7 @@ let read_opt read ic =
 
 let recv_chars pr =
   let ic = pr#stdout in
-  Gc.finalise ingore_close ic;
+  Gc.finalise ignore_close ic;
   Lwt_stream.from (fun _ ->
                      lwt x = read_opt Lwt_io.read_char ic in
                      if x = None then begin
@@ -386,7 +386,7 @@ let recv_chars pr =
 
 let recv_lines pr =
   let ic = pr#stdout in
-  Gc.finalise ingore_close ic;
+  Gc.finalise ignore_close ic;
   Lwt_stream.from (fun _ ->
                      lwt x = read_opt Lwt_io.read_line ic in
                      if x = None then begin

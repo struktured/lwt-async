@@ -1,2 +1,4 @@
 lwt_daemon.ml
 lwt_daemon.mli
+lwt_log.mli
+lwt_main.ml
