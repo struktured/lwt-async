@@ -31,7 +31,7 @@
 
 *)
 
-(** {6 Types} *)
+(** {2 Types} *)
 
 (** Type of log levels. A level determines the importance of a
     message *)
@@ -65,12 +65,12 @@ type section
       Each section carries a level, and messages with a lower log
       level than than the section level will be dropped.
 
-      Section levels are initialised using [load_rules rules_str] where
-      [rules_str] must contains one or more rules of the form
+      Section levels are initialised using the contents of the [LWT_LOG]
+      environment variable, which must contain one or more rules of the form
       [pattern -> level] separated by ";". Where [pattern] is a string
       that may contain [*].
 
-      For example, if [rules_str] contains:
+      For example, if [LWT_LOG] contains:
       {[
         access -> warning;
         foo[*] -> error
@@ -79,7 +79,7 @@ type section
       level of any section matching ["foo[*]"] is {!Error}.
 
       If the pattern is omited in a rule then the pattern ["*"] is
-      used instead, so [rules_str] may just contains ["debug"] for
+      used instead, so [LWT_LOG] may just contains ["debug"] for
       instance.
 
       By default, the following rule apply : ["* -> notice"] *)
@@ -87,7 +87,8 @@ type section
 val string_of_level : level -> string
 
 val load_rules : string -> unit
-  (** reset rules by parsing the string *)
+  (** Reset the rules set when parsing the [LWT_LOG] environment variable using this
+      string. *)
 
 val add_rule : string -> level -> unit
   (** [add_rule pattern level] adds a rule for sections logging
@@ -110,7 +111,7 @@ val append_rule : string -> level -> unit
       ]}
   *)
 
-(** {6 Logging functions} *)
+(** {2 Logging functions} *)
 
 val log : ?exn : exn -> ?section : section -> ?location : (string * int * int) -> ?logger : logger -> level : level -> string -> unit Lwt.t
   (** [log ?section ?logger ~level message] logs a message.
@@ -202,7 +203,7 @@ module Section : sig
         rules. *)
 end
 
-(** {6 Log templates} *)
+(** {2 Log templates} *)
 
 type template = string
     (** A template is for generating log messages.
@@ -223,9 +224,7 @@ type template = string
 
         For example:
         - ["$(name): $(message)"]
-        - ["$(date) $(name)[$(pid)]: $(message)"]
-        - ["$(date).$(milliseconds) $(name)[$(pid)]: $(message)"]
-        - ["$(date): $(loc-file): $(loc-line): $(loc-column): $(message)"]
+        - ["$(name): $(loc-file): $(loc-line): $(loc-column): $(message)"]
     *)
 
 val render : buffer : Buffer.t -> template : template -> section : section -> level : level -> message : string -> unit
@@ -237,7 +236,7 @@ val render : buffer : Buffer.t -> template : template -> section : section -> le
 val location_key : (string * int * int) Lwt.key
   (** The key for storing current location. *)
 
-(** {6 Loggers} *)
+(** {2 Loggers} *)
 
 exception Logger_closed
   (** Exception raised when trying to use a closed logger *)
@@ -283,7 +282,7 @@ val dispatch : (section -> level -> logger) -> logger
       ]}
   *)
 
-(** {6 Predefined loggers} *)
+(** {2 Predefined loggers} *)
 
 val null : logger
   (** Logger which drops everything *)
